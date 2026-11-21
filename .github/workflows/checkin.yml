@@ -1,11 +1,16 @@
 name: 自动签到
 
 on:
-  workflow_dispatch:  # 支持手动触发（cron-job.org 外部定时调用）
+  workflow_dispatch:
 
 jobs:
   checkin:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 账号数量写在这里：3 个账号就写 [1, 2, 3]
+        account: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,13 +21,13 @@ jobs:
       - name: 安装系统依赖（ddddocr 需要）
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1 libglib2.0-0t64
+          sudo apt-get install -y libgl1 libglib2.0-0t64 || sudo apt-get install -y libgl1 libglib2.0-0
 
       - name: 安装 Python 依赖
         run: pip install requests ddddocr
 
-      - name: 执行签到
+      - name: 执行签到（账号 ${{ matrix.account }}）
         env:
-          SWU_USERNAME: ${{ secrets.SWU_USERNAME }}
-          SWU_PASSWORD: ${{ secrets.SWU_PASSWORD }}
+          SWU_USERNAME: ${{ secrets[format('SWU_USERNAME_{0}', matrix.account)] }}
+          SWU_PASSWORD: ${{ secrets[format('SWU_PASSWORD_{0}', matrix.account)] }}
         run: python check_in.py
